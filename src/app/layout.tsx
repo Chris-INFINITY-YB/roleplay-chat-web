@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "情景式角色扮演聊天智能体",
+  title: "情景式角色扮演聊天",
   description: "一个可注入背景故事与人设规则的沉浸式角色聊天应用",
 };
 

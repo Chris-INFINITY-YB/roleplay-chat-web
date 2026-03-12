@@ -5,7 +5,16 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  status?: CharacterStatus;
 };
+
+type CharacterStatus = {
+  environment: string;
+  mood: string;
+  thoughts: string;
+  favorability: number;
+};
+
 
 const ROLE_PROFILE = {
   user: {
@@ -16,7 +25,7 @@ const ROLE_PROFILE = {
     wrapperClass: "justify-end",
   },
   assistant: {
-    name: "AI角色",
+    name: "陈小群",
     avatar: "🪄",
     bubbleClass:
       "mr-auto bg-white/90 text-slate-900 border border-white/40 shadow-lg shadow-black/10",
@@ -28,13 +37,19 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: `*(轻手轻脚地端着一个万年温玉托盘走近，托盘上放着热气腾腾的悟道灵茶)*
-
-哎哟我的主子哎，今天早朝可把您累坏了吧？那帮化神期的老头子，一个个胡子都快翘到天上去了，吵得奴才在殿外都觉得脑瓜子嗡嗡的！
-
-*(麻溜地把茶盏递到您手边，然后从袖子里掏出一把特制的小纸扇，讨好地给您扇风)*
-
-陛下，您快尝尝，这是今早刚送来的极品悟道茶，奴才特意用玉泉山的无根水给您泡的，最能安神养颜了。您这会儿靠着玄玉榻晒晒太阳，感觉龙体可还舒泰？要是觉得闷，奴才给您表演个新学的“无敌托马斯回旋御剑术”给您解解乏？`,
+      content: `*合上桌上的文件夹，将最后的咨询记录锁进抽屉。听到推门声，他原本带着几分疏离和疲态的眼神扫了过来，看清是你后，那层无形的防备感微微卸下了一些，整个人往椅背上一靠。*
+呼……今天的营业时间总算结束了。
+*伸手拿过桌上的马克杯喝了一口冷水，语气里带着点无奈的吐槽。*
+刚才最后一个客户，满嘴都是怎么理直气壮地算计合伙人，还试图让我用心理学帮他合理化这种背叛。听了一个小时，简直生理性反感，脑仁疼。
+*他随手把细框眼镜摘下来扔在桌上，揉了揉眉心，视线重新落在你身上，带着点自然的意外。*
+你怎么过来了？
+`,
+      status: {
+        environment: "傍晚的心理咨询室，光线昏黄温暖",
+        mood: "疲惫但因见到熟人而放松",
+        thoughts: "这家伙怎么来了，刚好可以歇会儿。",
+        favorability: 10,
+      },
     },
   ]);
 
@@ -73,7 +88,11 @@ export default function Home() {
         body: JSON.stringify({ messages: nextMessages }),
       });
 
-      const data = (await response.json()) as { reply?: string; error?: string };
+      const data = (await response.json()) as {
+        reply?: string;
+        error?: string;
+        status?: CharacterStatus;
+      };
       if (!response.ok) {
         throw new Error(data.error || "请求失败，请稍后重试。");
       }
@@ -82,7 +101,14 @@ export default function Home() {
         throw new Error("模型未返回有效内容。");
       }
 
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply! }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.reply!,
+          status: data.status,
+        },
+      ]);
       scrollToBottom();
     } catch (err) {
       const message = err instanceof Error ? err.message : "出现未知错误，请稍后重试。";
@@ -139,8 +165,10 @@ export default function Home() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#1e293b,_#020617_55%)] p-4 text-slate-100 md:p-8">
       <main className="mx-auto flex h-[calc(100vh-2rem)] w-full max-w-5xl flex-col rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl md:h-[calc(100vh-4rem)]">
         <header className="border-b border-white/10 px-5 py-4 md:px-8">
-          <h1 className="text-xl font-semibold tracking-wide md:text-2xl">情景式角色扮演聊天智能体</h1>
-          <p className="mt-1 text-sm text-slate-300">基于你的设定进行沉浸式对话，持续记住最近剧情进展。</p>
+          <div className="mb-0">
+            <h1 className="text-xl font-semibold tracking-wide md:text-2xl">情景式角色扮演聊天智能体</h1>
+            <p className="mt-1 text-sm text-slate-300">基于你的设定进行沉浸式对话，持续记住最近剧情进展。</p>
+          </div>
         </header>
 
         <section
@@ -162,6 +190,38 @@ export default function Home() {
                     >
                       {renderMessageContent(message.content, message.role)}
                     </div>
+                    
+                    {/* 消息下方的状态栏 */}
+                    {message.status && (
+                      <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg border border-white/5 bg-black/20 p-2 text-[10px] text-slate-300 backdrop-blur-sm md:grid-cols-4 md:gap-3 md:text-xs">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-indigo-300/60">📍 环境</span>
+                          <span className="line-clamp-1 opacity-80">{message.status.environment}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-indigo-300/60">mood 心情</span>
+                          <span className="line-clamp-1 opacity-80">{message.status.mood}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-indigo-300/60">💭 内心OS</span>
+                          <span className="line-clamp-1 italic opacity-80">{message.status.thoughts}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-indigo-300/60">❤️ 好感度</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-rose-400">{message.status.favorability}</span>
+                            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className="h-full bg-gradient-to-r from-rose-400 to-indigo-500"
+                                style={{
+                                  width: `${Math.min(Math.max(message.status.favorability, 0), 100)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
